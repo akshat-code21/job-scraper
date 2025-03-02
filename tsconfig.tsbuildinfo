@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/scrapers/amazon.ts"],"version":"5.8.2"}
+{"root":["./src/index.ts","./src/scrapers/amazon.ts","./src/scrapers/google.ts"],"version":"5.8.2"}
