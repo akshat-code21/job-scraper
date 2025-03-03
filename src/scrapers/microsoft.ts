@@ -1,6 +1,15 @@
 import puppeteer from "puppeteer";
 import parseDateString from "../utils/parseDateString";
 
+interface MicrosoftJob {
+  title: string;
+  location: string;
+  updateDate: string;
+  link: string;
+  id: string;
+  description?: string;
+}
+
 export default async function scrapMicrosoftJobs() {
   console.log("Starting Microsoft jobs scraper");
   const browser = await puppeteer.launch({
@@ -10,89 +19,119 @@ export default async function scrapMicrosoftJobs() {
 
   try {
     const page = await browser.newPage();
-    await page.goto(
-      "https://jobs.careers.microsoft.com/global/en/search?p=Software%20Engineering&l=en_us&pg=1&pgSz=20&o=Relevance&flt=true"
-    );
 
-    await page.waitForSelector("div.ms-List-page", { timeout: 10000 });
-    await page.waitForFunction(
-      () => {
-        const list = document.querySelector("div.ms-List-page");
-        return list && list.children.length > 0;
-      },
-      { timeout: 10000 }
-    );
+    let allJobs: MicrosoftJob[] = [];
+    let currentPage = 1;
+    const maxPages = 28;
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    while (currentPage <= maxPages) {
+      console.log(`Scraping page ${currentPage}...`);
 
-    const jobs = await page.evaluate(() => {
-      const jobsList = document.querySelector("div.ms-List-page");
-      console.log("Found jobsList:", !!jobsList);
+      await page.goto(
+        `https://jobs.careers.microsoft.com/global/en/search?p=Software%20Engineering&l=en_us&pg=${currentPage}&pgSz=20&o=Relevance&flt=true`,
+        { waitUntil: "networkidle2" }
+      );
 
-      if (!jobsList) return [];
+      await page.waitForSelector("div.ms-List-page", { timeout: 30000 });
 
-      const jobItems = jobsList.querySelectorAll("div[role='listitem']");
-      console.log("Number of job items found:", jobItems.length);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
 
-      return Array.from(jobItems)
-        .map((job) => {
-          try {
-            const jobContainer = job.querySelector(
-              "div[aria-label^='Job item']"
-            );
-            const jobAriaLabel = jobContainer?.getAttribute("aria-label") || "";
+      const pageJobs = await page.evaluate(() => {
+        const jobLists = Array.from(
+          document.querySelectorAll("div.ms-List-page")
+        );
+        console.log(`Found ${jobLists.length} job list containers`);
 
-            const jobIdMatch = jobAriaLabel.match(/Job item (\d+)/);
-            const jobId = jobIdMatch ? jobIdMatch[1] : "";
+        let allJobItems: Element[] = [];
 
-            const titleMatch = jobAriaLabel.match(/Job item \d+ (.+)/);
-            const title = titleMatch ? titleMatch[1] : "";
+        jobLists.forEach((list, index) => {
+          const jobItems = Array.from(
+            list.querySelectorAll("div[role='listitem']")
+          );
+          console.log(
+            `List container ${index + 1} has ${jobItems.length} job items`
+          );
+          allJobItems = [...allJobItems, ...jobItems];
+        });
 
-            let finalTitle = title;
-            if (!finalTitle) {
-              const seeDetailsButton = job.querySelector(
-                "button.ms-Link[aria-label^='click to see details']"
+        console.log(`Total job items found: ${allJobItems.length}`);
+
+        return allJobItems
+          .map((job) => {
+            try {
+              const jobContainer = job.querySelector(
+                "div[aria-label^='Job item']"
               );
-              const seeDetailsLabel =
-                seeDetailsButton?.getAttribute("aria-label") || "";
-              const detailsTitleMatch = seeDetailsLabel.match(
-                /click to see details for (.+)/
+              const jobAriaLabel =
+                jobContainer?.getAttribute("aria-label") || "";
+
+              const jobIdMatch = jobAriaLabel.match(/Job item (\d+)/);
+              const jobId = jobIdMatch ? jobIdMatch[1] : "";
+
+              const titleMatch = jobAriaLabel.match(/Job item \d+ (.+)/);
+              const title = titleMatch ? titleMatch[1] : "";
+
+              let finalTitle = title;
+              if (!finalTitle) {
+                const seeDetailsButton = job.querySelector(
+                  "button.ms-Link[aria-label^='click to see details']"
+                );
+                const seeDetailsLabel =
+                  seeDetailsButton?.getAttribute("aria-label") || "";
+                const detailsTitleMatch = seeDetailsLabel.match(
+                  /click to see details for (.+)/
+                );
+                finalTitle = detailsTitleMatch ? detailsTitleMatch[1] : "";
+              }
+
+              const locationElement = job.querySelector(
+                "i[data-icon-name='POI']"
               );
-              finalTitle = detailsTitleMatch ? detailsTitleMatch[1] : "";
+              const dateElement = job.querySelector(
+                "i[data-icon-name='Clock']"
+              );
+
+              const formattedTitle = finalTitle.replace(/\s+/g, "-");
+              const jobUrl = jobId
+                ? `https://jobs.careers.microsoft.com/global/en/job/${jobId}/${formattedTitle}`
+                : "";
+
+              return {
+                title: finalTitle,
+                location:
+                  locationElement?.nextElementSibling?.textContent?.trim() ||
+                  "",
+                updateDate:
+                  dateElement?.nextElementSibling?.textContent?.trim() || "",
+                link: jobUrl,
+                id: jobId,
+              };
+            } catch (error) {
+              console.log("Error processing job item:", error);
+              return null;
             }
+          })
+          .filter((job) => job && job.title);
+      });
+      const validJobs = pageJobs.filter(
+        (job): job is MicrosoftJob => job !== null
+      );
+      console.log(`Found ${validJobs.length} jobs on page ${currentPage}`);
+      console.log(`Page ${currentPage} jobs:`, validJobs);
+      allJobs = [...allJobs, ...validJobs];
+      currentPage++;
+    }
 
-            const locationElement = job.querySelector(
-              "i[data-icon-name='POI']"
-            );
-            const dateElement = job.querySelector("i[data-icon-name='Clock']");
-
-            const formattedTitle = finalTitle.replace(/\s+/g, "-");
-            const jobUrl = jobId
-              ? `https://jobs.careers.microsoft.com/global/en/job/${jobId}/${formattedTitle}`
-              : "";
-
-            return {
-              title: finalTitle,
-              location:
-                locationElement?.nextElementSibling?.textContent?.trim() || "",
-              updateDate:
-                dateElement?.nextElementSibling?.textContent?.trim() || "",
-              link: jobUrl,
-              id: jobId,
-            };
-          } catch (error) {
-            console.log("Error processing job item:", error);
-            return null;
-          }
-        })
-        .filter((job) => job && job.title);
-    });
+    console.log(
+      `Found ${allJobs.length} jobs in total before processing descriptions`
+    );
 
     const processedJobs = [];
 
-    for (const job of jobs.filter(
-      (job): job is any => job !== null && job !== undefined
-    )) {
+    for (let i = 0; i < allJobs.length; i++) {
+      const job = allJobs[i];
+      console.log(`Processing job ${i + 1}/${allJobs.length}: ${job.title}`);
+
       const parsedDate = parseDateString(job.updateDate);
 
       if (job.link) {
@@ -191,9 +230,7 @@ export default async function scrapMicrosoftJobs() {
       }
     }
 
-    console.log(`Found ${processedJobs.length} jobs`);
-    console.log("Scraped jobs:", processedJobs);
-
+    console.log(`Successfully processed ${processedJobs.length} jobs in total`);
     return processedJobs;
   } catch (error) {
     console.error("Error scraping Microsoft jobs:", error);
