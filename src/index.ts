@@ -4,9 +4,9 @@ import scrapMicrosoftJobs from "./scrapers/microsoft";
 // scrapAmazonJobs().catch((error) =>
 //   console.error("Amazon Script failed:", error)
 // );
-// scrapGoogleJobs().catch((error) =>
-//   console.error("Google Script failed : ", error)
-// );
-scrapMicrosoftJobs().catch((error) => {
-  console.error("Microsoft script failed : ", error);
-});
+scrapGoogleJobs().catch((error) =>
+  console.error("Google Script failed : ", error)
+);
+// scrapMicrosoftJobs().catch((error) => {
+//   console.error("Microsoft script failed : ", error);
+// });
