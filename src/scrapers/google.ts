@@ -4,6 +4,7 @@ interface GoogleJob {
   location: string;
   updateDate: string;
   link: string;
+  company ?: string
 }
 export default async function scrapGoogleJobs() {
   console.log("Starting Google jobs scraper");
@@ -23,11 +24,11 @@ export default async function scrapGoogleJobs() {
     let hasMoreJobs = true;
     let allJobs: GoogleJob[] = [];
     let pageNumber = 1;
-    const maxPages = 5;
+    const maxPages = 1;
 
     while (hasMoreJobs && pageNumber <= maxPages) {
       try {
-        console.log(`Scraping page ${pageNumber}...`);
+        console.log(`Scraping Googlepage ${pageNumber}...`);
         
         if (pageNumber > 1) {
           const nextButton = await page.$('[aria-label="Go to next page"], [aria-label="Go to next page"]');
@@ -70,7 +71,7 @@ export default async function scrapGoogleJobs() {
                 title: titleElement?.textContent?.trim() || "",
                 location:
                   locationElement?.textContent?.replace("place", "").trim() || "",
-                updateDate: dateElement?.textContent?.trim() || "",
+                updateDate: new Date().toISOString(),
                 link: learnMoreLink || "",
               };
             })

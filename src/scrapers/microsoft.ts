@@ -8,6 +8,7 @@ interface MicrosoftJob {
   link: string;
   id: string;
   description?: string;
+  company ?: string
 }
 
 export default async function scrapMicrosoftJobs() {
@@ -22,10 +23,10 @@ export default async function scrapMicrosoftJobs() {
 
     let allJobs: MicrosoftJob[] = [];
     let currentPage = 1;
-    const maxPages = 28;
+    const maxPages = 1;
 
     while (currentPage <= maxPages) {
-      console.log(`Scraping page ${currentPage}...`);
+      console.log(`Scraping MS page ${currentPage}...`);
 
       await page.goto(
         `https://jobs.careers.microsoft.com/global/en/search?p=Software%20Engineering&l=en_us&pg=${currentPage}&pgSz=20&o=Relevance&flt=true`,
@@ -54,7 +55,7 @@ export default async function scrapMicrosoftJobs() {
           allJobItems = [...allJobItems, ...jobItems];
         });
 
-        console.log(`Total job items found: ${allJobItems.length}`);
+        console.log(`Total MS job items found: ${allJobItems.length}`);
 
         return allJobItems
           .map((job) => {
@@ -123,14 +124,14 @@ export default async function scrapMicrosoftJobs() {
     }
 
     console.log(
-      `Found ${allJobs.length} jobs in total before processing descriptions`
+      `Found ${allJobs.length} jobs in total `
     );
 
     const processedJobs = [];
 
+    console.log(`Processing job descriptions...`);
     for (let i = 0; i < allJobs.length; i++) {
       const job = allJobs[i];
-      console.log(`Processing job ${i + 1}/${allJobs.length}: ${job.title}`);
 
       const parsedDate = parseDateString(job.updateDate);
 
@@ -207,7 +208,7 @@ export default async function scrapMicrosoftJobs() {
 
           processedJobs.push({
             ...job,
-            updateDate: parsedDate || job.updateDate,
+            updateDate: parseDateString(job.updateDate)?.toISOString() || new Date().toISOString(),
             description: cleanDescription || "",
           });
         } catch (error) {
@@ -217,14 +218,14 @@ export default async function scrapMicrosoftJobs() {
           );
           processedJobs.push({
             ...job,
-            updateDate: parsedDate || job.updateDate,
+            updateDate: parseDateString(job.updateDate)?.toISOString() || new Date().toISOString(),
             description: "",
           });
         }
       } else {
         processedJobs.push({
           ...job,
-          updateDate: parsedDate || job.updateDate,
+          updateDate: parseDateString(job.updateDate)?.toISOString() || new Date().toISOString(),
           description: "",
         });
       }

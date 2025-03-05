@@ -2,21 +2,17 @@ import scrapAmazonJobs from "./scrapers/amazon";
 import scrapGoogleJobs from "./scrapers/google";
 import scrapMicrosoftJobs from "./scrapers/microsoft";
 import { JobService } from "./services/jobService";
-import app from "./api/server";
 
 const jobService = new JobService();
 
-// Function to run all scrapers
 async function runScrapers() {
   try {
-    // Run scrapers and store results
     const [amazonJobs, googleJobs, microsoftJobs] = await Promise.all([
       scrapAmazonJobs(),
       scrapGoogleJobs(),
       scrapMicrosoftJobs(),
     ]);
 
-    // Store jobs in database
     for (const job of [...amazonJobs, ...googleJobs, ...microsoftJobs]) {
       await jobService.createJob({
         title: job.title,
@@ -34,7 +30,6 @@ async function runScrapers() {
   }
 }
 
-// Helper function to determine company based on job URL
 function determineCompany(job: any): string {
   if (job.link.includes("amazon")) return "Amazon";
   if (job.link.includes("google")) return "Google";
@@ -42,10 +37,4 @@ function determineCompany(job: any): string {
   return "Unknown";
 }
 
-setInterval(runScrapers, 60 * 60 * 1000);
-
-runScrapers();
-
-app.listen(3000, () => {
-  console.log(`Server running on port 3000`);
-});
+runScrapers().then(() => process.exit(0));

@@ -5,6 +5,7 @@ interface AmazonJob {
   updateDate: string;
   description: string;
   link: string;
+  company ?: string
 }
 export default async function scrapAmazonJobs() {
   console.log("Starting Amazon jobs scraper");
@@ -18,10 +19,10 @@ export default async function scrapAmazonJobs() {
 
     let allJobs: AmazonJob[] = [];
     let currentPage = 1;
-    const maxPages = 10;
+    const maxPages = 1;
 
     while (currentPage <= maxPages) {
-      console.log(`Scraping page ${currentPage}...`);
+      console.log(`Scraping Amazon page ${currentPage}...`);
 
       if (currentPage === 1) {
         await page.goto(
@@ -71,7 +72,7 @@ export default async function scrapAmazonJobs() {
           return {
             title: titleElement?.textContent?.trim() || "",
             location: locationElement?.textContent?.trim() || "",
-            updateDate: dateElement?.textContent?.split(" ")[1]?.trim() || "",
+            updateDate: dateElement?.textContent?.split(" ")[1]?.trim() || new Date().toISOString(),
             description:
               descriptionElement?.querySelector("div")?.textContent?.trim() ||
               "",
