@@ -54,25 +54,58 @@ export class JobService {
 
   async getAllJobs(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    return await prisma.jobs.findMany({
-      skip,
-      take: limit,
-      orderBy: { postedDate: "desc" },
-    });
+    
+    const [jobs, total] = await Promise.all([
+      prisma.jobs.findMany({
+        skip,
+        take: limit,
+        orderBy: { postedDate: "desc" },
+      }),
+      prisma.jobs.count()
+    ]);
+
+    return {
+      jobs,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   async getJobsByFilter(filters: {
     company?: string;
     location?: string;
     fromDate?: Date;
-  }) {
-    return await prisma.jobs.findMany({
-      where: {
-        ...(filters.company && { company: filters.company }),
-        ...(filters.location && { location: filters.location }),
-        ...(filters.fromDate && { postedDate: { gte: filters.fromDate } }),
-      },
-      orderBy: { postedDate: "desc" },
-    });
+  }, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    
+    const whereClause = {
+      ...(filters.company && { company: filters.company }),
+      ...(filters.location && { location: filters.location }),
+      ...(filters.fromDate && { postedDate: { gte: filters.fromDate } }),
+    };
+
+    const [jobs, total] = await Promise.all([
+      prisma.jobs.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { postedDate: "desc" },
+      }),
+      prisma.jobs.count({ where: whereClause })
+    ]);
+
+    return {
+      jobs,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 }

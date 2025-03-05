@@ -6,7 +6,7 @@ interface GoogleJob {
   link: string;
   company ?: string
 }
-export default async function scrapGoogleJobs() {
+export default async function scrapGoogleJobs(noOfPages:number) {
   console.log("Starting Google jobs scraper");
   const browser = await puppeteer.launch({
     headless: true,
@@ -24,7 +24,7 @@ export default async function scrapGoogleJobs() {
     let hasMoreJobs = true;
     let allJobs: GoogleJob[] = [];
     let pageNumber = 1;
-    const maxPages = 1;
+    const maxPages = noOfPages || 1;
 
     while (hasMoreJobs && pageNumber <= maxPages) {
       try {

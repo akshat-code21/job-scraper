@@ -3,7 +3,7 @@ import scrapGoogleJobs from "./scrapers/google";
 import scrapMicrosoftJobs from "./scrapers/microsoft";
 import { JobService } from "./services/jobService";
 import app from "./api/server";
-
+const noOfPages = 1;
 const jobService = new JobService();
 
 // Function to run all scrapers
@@ -11,9 +11,9 @@ async function runScrapers() {
   try {
     // Run scrapers and store results
     const [amazonJobs, googleJobs, microsoftJobs] = await Promise.all([
-      scrapAmazonJobs(),
-      scrapGoogleJobs(),
-      scrapMicrosoftJobs(),
+      scrapAmazonJobs(noOfPages),
+      scrapGoogleJobs(noOfPages),
+      scrapMicrosoftJobs(noOfPages),
     ]);
 
     // Store jobs in database

@@ -11,7 +11,7 @@ interface MicrosoftJob {
   company ?: string
 }
 
-export default async function scrapMicrosoftJobs() {
+export default async function scrapMicrosoftJobs(noOfPages:number) {
   console.log("Starting Microsoft jobs scraper");
   const browser = await puppeteer.launch({
     headless: true,
@@ -23,7 +23,7 @@ export default async function scrapMicrosoftJobs() {
 
     let allJobs: MicrosoftJob[] = [];
     let currentPage = 1;
-    const maxPages = 1;
+    const maxPages = noOfPages || 1;
 
     while (currentPage <= maxPages) {
       console.log(`Scraping MS page ${currentPage}...`);

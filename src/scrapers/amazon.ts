@@ -7,7 +7,7 @@ interface AmazonJob {
   link: string;
   company ?: string
 }
-export default async function scrapAmazonJobs() {
+export default async function scrapAmazonJobs(noOfPages:number) {
   console.log("Starting Amazon jobs scraper");
   const browser = await puppeteer.launch({
     headless: true,
@@ -19,7 +19,7 @@ export default async function scrapAmazonJobs() {
 
     let allJobs: AmazonJob[] = [];
     let currentPage = 1;
-    const maxPages = 1;
+    const maxPages = noOfPages || 2;
 
     while (currentPage <= maxPages) {
       console.log(`Scraping Amazon page ${currentPage}...`);

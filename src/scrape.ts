@@ -4,13 +4,13 @@ import scrapMicrosoftJobs from "./scrapers/microsoft";
 import { JobService } from "./services/jobService";
 
 const jobService = new JobService();
-
+const noOfPages = 1;
 async function runScrapers() {
   try {
     const [amazonJobs, googleJobs, microsoftJobs] = await Promise.all([
-      scrapAmazonJobs(),
-      scrapGoogleJobs(),
-      scrapMicrosoftJobs(),
+      scrapAmazonJobs(noOfPages),
+      scrapGoogleJobs(noOfPages),
+      scrapMicrosoftJobs(noOfPages),
     ]);
 
     for (const job of [...amazonJobs, ...googleJobs, ...microsoftJobs]) {
