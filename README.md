@@ -121,7 +121,7 @@ model Jobs {
 ```
 
 ## Project Structure
-
+```
 ├── src/
 │   ├── api/
 │   │   ├── routes/
@@ -139,6 +139,7 @@ model Jobs {
 │   ├── schema.prisma
 │   └── migrations/
 └── package.json
+```
 
 ## Error Handling
 
